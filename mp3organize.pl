@@ -25,15 +25,17 @@ my $albumFolderToggle = $mw -> Checkbutton(-text => 'Create Album Folder?', -onv
 
 my $seperatorLabel = $mw -> Label(-text => "___________________________") -> pack(-anchor => 'w');
 
+my $imageAl = $mw -> Photo(-file => "Al.png");
 #$imageAr = $mw -> Photo(-file => "Ar.png");
 #$imageArYr = $mw -> Photo(-file => "ArYr.png");
 #$imageArYrAl = $mw -> Photo(-file => "ArYrAl.png");
 #$imageArAl = $mw -> Photo(-file => "ArAl.png");
-$imageAl = $mw -> Photo(-file => "Al.png");
 #$imageYrAl = $mw -> Photo(-file => "YrAl.png");
 
+my $currentImage = ''
+my $exampleImage = $mw -> Label(-image => $currentImage) -> pack(-anchor => 'ne');
 
-$exampleImage = $mw -> Label(-image => $currentImage) -> pack(-anchor => 'ne');
+
 
 my $c = $mw -> Canvas(-width => 700, -height => 480); #Set the window size of mw
         $c -> pack;
@@ -45,5 +47,5 @@ my $exitButton = $mw -> Button(-text => "Quit",
 MainLoop;
 
 sub updateImage {
-	if ($albumCBValue == 1){$exampleImage = $mw -> Label(-image => $imageAl) -> pack(-anchor => 'ne');}
+	if ($albumCBValue == '1'){$currentImage = $imageAl);}
 }
