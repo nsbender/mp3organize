@@ -7,35 +7,35 @@ use Tk::PNG;
 my $albumCBV = 0;
 my $artistCBV = 0;
 my $yearCBV = 0;
-my $imagePath = "None.png";
+my $imagePath = "images/None.png";
 
 sub updateImage {
         if ($albumCBV == 1){
                 if($artistCBV == 1){
                         if($yearCBV == 1){
-                                $imagePath = "ArYrAl.png";
+                                $imagePath = "images/ArYrAl.png";
                         }
                         else {
-                                $imagePath = "ArAl.png";
+                                $imagePath = "images/ArAl.png";
                         }
                 }
                 elsif ($yearCBV == 1) {
-                        $imagePath = "YrAl.png";
+                        $imagePath = "images/YrAl.png";
                 }
 		else {
-			$imagePath = "Al.png"
+			$imagePath = "images/Al.png"
 		}
         }
         elsif($artistCBV == 1){
                 if($yearCBV == 1){
-                        $imagePath = "YrAr.png";
+                        $imagePath = "images/YrAr.png";
                 }
                 else {
-                        $imagePath = "Ar.png";
+                        $imagePath = "images/Ar.png";
                 }
         }
 	else {
-		$imagePath = "None.png";
+		$imagePath = "images/None.png";
 	}
 }
 
