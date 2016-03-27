@@ -8,4 +8,4 @@ Requires Tk Library including
 	Tk::PNG
 	Tk::checkbutton
 
-contact nsbender@gmail.com with questions or comments.
+contact nsbender1@gmail.com with questions or comments.
