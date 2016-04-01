@@ -3,6 +3,7 @@
 use Tk;
 use Encode;
 use Tk::PNG;
+use MP3::Tag;
 
 my $albumCBV = 0;
 my $artistCBV = 0;
@@ -19,8 +20,8 @@ my $mainLabel = $mw -> Label(-text => "Welcome to mp3organize! Use the options b
 
 my $chooseDirLabel = $mw -> Label(-text => "Please choose the directory containing the files:") -> place(-x => 350, -y => 24, -anchor => 'n');
 my $directoryButton = $mw -> Button(-text => "Select Directory",
-        -command => sub { my $workingDir = $mw->chooseDirectory; #The subroutine for the directory selection button: Open a folder slection dialog
-	$die = encode("windows-1252", $workingDir) })
+        -command => sub { $workingDir = $mw->chooseDirectory; #The subroutine for the directory selection button: Open a folder slection dialog
+	$die = encode('UTF-8', $workingDir) })
 	-> place(-x => 350, -y => 52, -anchor => 'n');
 
 my $currentImage = $mw -> Photo(-file => $imagePath);
@@ -62,6 +63,9 @@ my $refreshButton = $mw -> Button(-text => "Refresh", -command => sub { $current
 	}
  }) -> place(-x => 56, -y => 500, -anchor => 'w');
 
+my $processButton = $mw -> Button(-text => "PROCESS!", -command => sub { &process($die) }) -> place(-x => 56, -y => 548, -anchor => 's');
+
+
 my $exitButton = $mw -> Button(-text => "Quit", -command => sub { exit }) -> place(-x => 350, -y => 664, -anchor => 's');
 
 MainLoop;
@@ -96,3 +100,15 @@ sub updateImage {
         }
 }
 
+sub process {
+	my $workDir = $_[0];
+	opendir(DIR, $workDir) or die "Could not open folder\n";
+
+	while (my $filename = readdir(DIR)) {
+		$mp3 = MP3::Tag->new($filename);
+		# get some information about the file in the easiest way
+		$id3v1 = $mp3->{ID3v1};
+		print $id3v1->title;
+	}
+	closedir(DIR);
+}
