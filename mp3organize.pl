@@ -4,6 +4,7 @@ use Tk;
 use Encode;
 use Tk::PNG;
 use MP3::Tag;
+use File::Copy;
 
 my $albumCBV = 0;
 my $artistCBV = 0;
@@ -35,7 +36,7 @@ my $albumFolderToggle = $mw -> Checkbutton(-text => 'Create Album Folder?', -onv
 	-offvalue => '0', -variable => \$albumCBV, -command => sub { &updateImage();}) -> place(-x => 0, -y => 170, -anchor => 'w');
 
 
-my $seperatorLabel = $mw -> Label(-text => "___________________________") -> place(-x => 0, -y => 188, -anchor => 'w');
+my $separatorLabel = $mw -> Label(-text => "___________________________") -> place(-x => 0, -y => 188, -anchor => 'w');
 my $nameSchemeLabel = $mw -> Label(-text => "File Naming Scheme:") -> place(-x => 0, -y => 212, -anchor => 'w');
 my $TrackNumNameToggle = $mw -> Checkbutton(-text => 'Include Track Number?', -onvalue => '1',
         -offvalue => '0', -variable => \$trackNumNameCBV) -> place(-x => 0, -y => 236, -anchor => 'w');
@@ -46,11 +47,26 @@ my $albumNameToggle = $mw -> Checkbutton(-text => 'Include Album Name?', -onvalu
 my $trackNameToggle = $mw -> Checkbutton(-text => 'Include Track Name?', -onvalue => '1',
         -offvalue => '0', -variable => \$trackNameCBV) -> place(-x => 0, -y => 308, -anchor => 'w');
 
-my $seperatorLabel2 = $mw -> Label(-text => "___________________________") -> place(-x => 0, -y => 326, -anchor => 'w');
+my $separatorLabel2 = $mw -> Label(-text => "___________________________")
+	-> place(-x => 0, -y => 326, -anchor => 'w');
 my $otherLabel = $mw -> Label(-text => "Other Options:") -> place(-x => 0, -y => 350, -anchor => 'w');
 my $clearCommentToggle = $mw -> Checkbutton(-text => 'Clear Comment Tag?', -onvalue => '1',
         -offvalue => '0', -variable => \$clearCommentCBV) -> place(-x => 0, -y => 374, -anchor => 'w');
 
+
+my $fileSepLabel= $mw -> Label(-text => "Filename field separator:")
+ -> place(-x => 0, -y => 400, -anchor => 'w');
+
+my $tvar = "dropdownItems";
+my $spacerType;
+my $opt = $mw->Optionmenu(
+	-options => [["Dashes w/ Spaces"=> " - "], ["Dashes"=> "-"], ["Periods"=>"."], ["Spaces"=>" "]], 
+	-variable => \$spacerType,
+	-textvariable => \$tvar)
+	-> place(-x => 4, -y => 428,  -anchor => 'w');
+
+my $separatorLabel3 = $mw -> Label(-text => "___________________________")
+	-> place(-x => 0, -y => 460, -anchor => 'w');
 
 my $exampleImage = $mw -> Label(-image => $currentImage) -> place(-x => 194, -y => 92);
 my $refreshButton = $mw -> Button(-text => "Refresh", -command => sub { $currentImage -> configure(-file => $imagePath);
@@ -63,7 +79,7 @@ my $refreshButton = $mw -> Button(-text => "Refresh", -command => sub { $current
 	}
  }) -> place(-x => 56, -y => 500, -anchor => 'w');
 
-my $processButton = $mw -> Button(-text => "PROCESS!", -command => sub { &process($die) }) -> place(-x => 56, -y => 548, -anchor => 's');
+my $processButton = $mw -> Button(-text => "PROCESS!", -command => sub { &process($die) }) -> place(-x => 92, -y => 548, -anchor => 's');
 
 
 my $exitButton = $mw -> Button(-text => "Quit", -command => sub { exit }) -> place(-x => 350, -y => 664, -anchor => 's');
@@ -103,12 +119,88 @@ sub updateImage {
 sub process {
 	my $workDir = $_[0];
 	opendir(DIR, $workDir) or die "Could not open folder\n";
-
-	while (my $filename = readdir(DIR)) {
-		$mp3 = MP3::Tag->new($filename);
-		# get some information about the file in the easiest way
-		$id3v1 = $mp3->{ID3v1};
-		print $id3v1->title;
-	}
+	my @files = glob "$workDir/*.mp3";
 	closedir(DIR);
+	foreach $key (@files){
+		$mp3 = MP3::Tag->new($key); # create object 
+
+		$mp3->get_tags(); # read tags
+
+		if (exists $mp3->{ID3v2}) { # print track information
+			my $artist = $mp3->{ID3v2}->artist;
+			my $album = $mp3->{ID3v2}->album;
+			my $year = $mp3->{ID3v2}->year;
+			my $title = $mp3->{ID3v2}->title;
+			my $trackno = $mp3->{ID3v2}->track;
+
+			if (($trackno < 10)&&!(substr($trackno, 0, 1) == "0")){
+				$trackno = "0" . "$trackno";
+			}
+
+			my $newFile = "";
+
+			if ($artistNameCBV == 1){
+				$newFile .= "$artist";
+			}
+			if ($albumNameCBV == 1){
+				if ($artistNameCBV == 1){
+					$newFile .= "$spacerType";
+				}
+				$newFile .= "$album";
+			}
+			if ($trackNumNameCBV == 1){
+				if (($artistNameCBV == 1) || ($albumNameCBV == 1)){
+					$newFile .= "$spacerType";
+				}
+				$newFile .= "$trackno";
+			}
+			if ($trackNameCBV == 1){
+				if (($artistNameCBV == 1) || ($albumNameCBV == 1) || ($trackNumNameCBV == 1)){
+					$newFile .= "$spacerType";
+				}
+				$newFile .= "$title";
+			}
+			$newFile .= ".mp3";
+
+			if (!(-d "$artist")&&($artistCBV == 1)){
+				mkdir "$workDir" . "/" . "$artist";
+				if (!(-d "$year")&&($yearCBV == 1)){
+					mkdir "$workDir" . "/" . "$artist" . "/" . "$year";
+					if (!(-d "$album")&&($albumCBV == 1)){
+						mkdir "$workDir" . "/" . "$artist" . "/" . "$year" . "/" . "$album";
+					}
+				}
+				if (!(-d "$album")&&($albumCBV == 1)&&!($yearCBV == 1 )){
+					 mkdir "$workDir" . "/" . "$artist" . "/" . "$album";
+				}
+			} 
+
+			if (($artistCBV == 1)&&($yearCBV == 0)&&($albumCBV == 0)){
+				move("$key" ,"$workDir" . "/" . "$artist" . "/" . "$newFile");
+			}
+			if (($artistCBV == 1)&&($yearCBV == 1)&&($albumCBV == 0)){
+				move("$key" ,"$workDir" . "/" . "$artist" . "/" . "$year" . "/" . "$newFile");
+			}
+			if (($artistCBV == 1)&&($yearCBV == 1)&&($albumCBV == 1)){
+				move("$key" ,"$workDir" . "/" . "$artist" . "/" . "$year" . "/" . "$album" . "/" . "$newFile");
+			}
+			if (($artistCBV == 0)&&($yearCBV == 1)&&($albumCBV == 1)){
+				move("$key" ,"$workDir" . "/" . "$year" . "/" . "$album" . "/" . "$newFile");
+			}
+			if (($artistCBV == 1)&&($yearCBV == 0)&&($albumCBV == 1)){
+				move("$key" ,"$workDir" . "/" . "$artist" . "/" . "$album" . "/" . "$newFile");
+			}
+
+			print "Filename: $key - PROCESSED!\n";
+		}
+		elsif (!(exists $mp3->{ID3v2}) || !(exists $mp3->{ID3v1})){
+			$unsortedFolder = "$workDir" . "/" . "unsorted";
+			if (!(-d "$unsortedFolder")){
+				mkdir ("$workDir" . "/" . "unsorted");
+				move("$key" ,"$workDir" . "/" . "unsorted");
+			}
+			move("$key" ,"$workDir" . "/" . "unsorted");
+			print "$key has no tags! - MOVED TO UNSORTED FOLDER!";
+		}
+	}
 }
